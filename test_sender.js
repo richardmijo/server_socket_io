@@ -21,7 +21,7 @@ socket.on("joined", (data) => {
     };
 
     console.log("📤 Enviando evento 'message'...");
-    socket.emit("message", payload, (ack) => {
+    socket.emit("message:send", payload, (ack) => {
         console.log("✅ ACK de mensaje recibido:", ack);
         socket.disconnect();
     });
