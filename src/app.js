@@ -18,16 +18,16 @@ const app = express();
 // Middlewares
 app.use(helmet({
     contentSecurityPolicy: false
-})); // Headers de seguridad (CSP deshabilitado para facilitar demo)
+})); // Headers de seguridad (CSP deshabilitado para facilitar demo) - XSS
 app.use(cors()); // CORS
 app.use(morgan('dev')); // Logger HTTP
 app.use(dbLogger); // Logger a Base de Datos
-app.use(express.json()); // Parsear JSON
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json()); // Parsear JSON - req.body
+app.use(express.urlencoded({ extended: true })); // name=Richard&city=Loja - { name: "Richard", city: "Loja" }
 
 // Rutas Básicas
 app.get('/', (req, res) => {
-    res.json({ message: 'Welcome to the Clean Architecture API 🚀' });
+    res.json({ message: 'Bienvenido al servidor 🚀' });
 });
 
 // Servir cliente de prueba

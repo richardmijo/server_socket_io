@@ -7,7 +7,7 @@ const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'Backend API for Flutter Chat',
+            title: 'Backend API para Flutter Chat',
             version: '1.0.0',
             description: 'API documentation for the Clean Architecture Node.js Backend',
         },
