@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test Chat Socket.IO</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: white;
+            margin-bottom: 10px;
+        }
+
+        .msg {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .my-msg {
+            color: blue;
+            text-align: right;
+        }
+
+        .other-msg {
+            color: green;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .status.connected {
+            color: green;
+        }
+
+        .status.disconnected {
+            color: red;
+        }
+    </style>
+    <!-- Usar script local servido por el servidor Socket.IO automáticamente -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <h1>🧪 Cliente de Prueba Socket.IO</h1>
+
+    <div class="container">
+        <!-- AUTH SECTION -->
+        <div class="box">
+            <h3>1. Configuración de Conexión</h3>
+            <label>JWT Token (Cópialo del Login en Swagger):</label>
+            <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiIsInR..." style="width: 100%;">
+            <br>
+            <button onclick="connectSocket()">🔌 Conectar Socket</button>
+            <span id="connectionStatus" class="status disconnected">Desconectado</span>
+        </div>
+
+        <!-- CHAT SECTION -->
+        <div class="box" id="chatSection" style="opacity: 0.5; pointer-events: none;">
+            <h3>2. Chat (Sala)</h3>
+            <label>ID de Sala (Room ID) - <small>Obtenlo usando <b>POST /chat/direct</b> en Swagger</small>:</label>
+            <input type="number" id="roomId" placeholder="Ej: 1">
+            <button onclick="joinRoom()">🚪 Unirse a Sala</button>
+
+            <label>Mensajes:</label>
+            <div id="messages"></div>
+
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="msgContent" placeholder="Escribe un mensaje..." style="flex: 1;">
+                <button onclick="sendMessage()">Enviar 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        const URL = "http://localhost:3000";
+
+        function connectSocket() {
+            const token = document.getElementById('token').value;
+            if (!token) return alert("¡Necesitas pegar el Token primero!");
+
+            socket = io(URL, {
+                auth: { token: token }
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('connectionStatus').textContent = "Conectado ✅ (" + socket.id + ")";
+                document.getElementById('connectionStatus').className = "status connected";
+                document.getElementById('chatSection').style.opacity = "1";
+                document.getElementById('chatSection').style.pointerEvents = "all";
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('connectionStatus').textContent = "Desconectado ❌";
+                document.getElementById('connectionStatus').className = "status disconnected";
+                document.getElementById('chatSection').style.opacity = "0.5";
+                document.getElementById('chatSection').style.pointerEvents = "none";
+            });
+
+            socket.on('connect_error', (err) => {
+                console.error(err);
+                alert("Error de conexión: " + err.message);
+            });
+
+            // Escuchar mensajes nuevos
+            socket.on('new_message', (msg) => {
+                addMessageToUI(msg);
+            });
+        }
+
+        function joinRoom() {
+            const roomId = document.getElementById('roomId').value;
+            if (!roomId) return alert("Ingresa un ID de sala");
+
+            socket.emit('join_room', { roomId: roomId });
+            addSystemMsg(`Te uniste a la sala ${roomId}`);
+        }
+
+        function sendMessage() {
+            const roomId = document.getElementById('roomId').value;
+            const content = document.getElementById('msgContent').value;
+
+            if (!roomId || !content) return;
+
+            socket.emit('send_message', {
+                roomId: roomId,
+                content: content,
+                type: 'TEXT'
+            }, (response) => {
+                if (response.status === 'ok') {
+                    document.getElementById('msgContent').value = '';
+                    // El mensaje se añadirá cuando llegue el evento 'new_message' del servidor
+                } else {
+                    alert("Error enviando: " + response.error);
+                }
+            });
+        }
+
+        function addMessageToUI(msg) {
+            const div = document.createElement('div');
+            const isMe = (msg.senderId && socket.user && msg.senderId === socket.user.id);
+            // Nota: En la implementación actual socket.user no está disponible en el cliente directo,
+            // pero podemos inferirlo o simplemente mostrarlo genérico.
+
+            div.className = `msg`;
+            div.innerHTML = `<b>${msg.sender?.name || 'Usuario ' + msg.senderId}:</b> ${msg.content}`;
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        }
+
+        function addSystemMsg(text) {
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.style.color = '#888';
+            div.style.fontStyle = 'italic';
+            div.innerText = text;
+            document.getElementById('messages').appendChild(div);
+        }
+    </script>
+</body>
+
+</html>

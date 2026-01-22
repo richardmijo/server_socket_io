@@ -1,0 +1,71 @@
+graph TD
+    %% Estilos
+    classDef client fill:#f9f,stroke:#333,stroke-width:2px,color:black;
+    classDef entry fill:#ff9,stroke:#333,stroke-width:2px,color:black;
+    classDef presentation fill:#4db6ac,stroke:#333,stroke-width:2px,color:white;
+    classDef domain fill:#64b5f6,stroke:#333,stroke-width:2px,color:white;
+    classDef data fill:#9575cd,stroke:#333,stroke-width:2px,color:white;
+    classDef db fill:#e0e0e0,stroke:#333,stroke-width:2px,color:black;
+
+    %% Nodos
+    subgraph Clients ["📱 Clientes (Frontend)"]
+        FlutterApp[App Flutter]:::client
+        WebClient[Web / Postman]:::client
+    end
+
+    subgraph Server ["🖥️ Servidor Node.js"]
+        
+        subgraph EntryPoint ["🚪 Punto de Entrada"]
+            ServerJS(server.js):::entry
+            AppJS(app.js):::entry
+            SocketIO(Socket.IO Server):::entry
+        end
+
+        subgraph Presentation ["📡 Capa de Presentación (Rutas & Controladores)"]
+            AuthRoutes(auth.routes.js):::presentation
+            ChatRoutes(chat.routes.js):::presentation
+            AuthController(auth.controller.js):::presentation
+            ChatController(chat.controller.js):::presentation
+        end
+
+        subgraph BusinessLogic ["🧠 Capa de Negocio (Servicios)"]
+            AuthService(auth.service.js):::domain
+            ChatService(chat.service.js):::domain
+            SocketService(socket.service.js):::domain
+            UserService(user.service.js):::domain
+        end
+
+        subgraph DataAccess ["💾 Capa de Datos (ORM)"]
+            PrismaClient(Prisma Client):::data
+        end
+    end
+
+    subgraph Database ["🗄️ Infraestructura"]
+        Postgres[(PostgreSQL DB)]:::db
+    end
+
+    %% Conexiones HTTP
+    FlutterApp -- "HTTP Request (JSON)" --> AppJS
+    AppJS --> AuthRoutes
+    AppJS --> ChatRoutes
+    
+    AuthRoutes --> AuthController
+    ChatRoutes --> ChatController
+    
+    AuthController -- "Llama a" --> AuthService
+    ChatController -- "Llama a" --> ChatService
+
+    %% Conexiones Socket
+    FlutterApp -- "WebSocket Events" --> ServerJS
+    ServerJS --> SocketIO
+    SocketIO -- "Maneja Eventos" --> SocketService
+    SocketService -- "Guarda Mensaje" --> ChatService
+
+    %% Conexiones a Datos
+    AuthService -- "Query" --> PrismaClient
+    ChatService -- "Query" --> PrismaClient
+    UserService -- "Query" --> PrismaClient
+    SocketService -- "Auth Check" --> PrismaClient
+
+    %% Conexión a DB
+    PrismaClient -- "SQL" --> Postgres

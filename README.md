@@ -1,64 +1,76 @@
-# Proyecto Server Socket.IO
+# Backend de Chat con Socket.IO y Node.js
 
-Este es un proyecto sencillo para demostrar el funcionamiento de **Socket.IO** en tiempo real, utilizando el concepto de "Salas" (Rooms) para agrupar conexiones.
+Este es un backend educativo utilizando **Arquitectura Limpia (Clean Architecture)**.
 
-## 📂 Archivos Principales
+## 🚀 Requisitos Previos
 
-- **`server.js`**: El servidor principal que gestiona las conexiones y distribuye los mensajes.
-- **`listener.js`**: Un cliente de escucha que se conecta al servidor y muestra los mensajes recibidos en consola.
-- **`test_sender.js`**: Un script de utilidad para simular el envío de mensajes (como si fuera otro cliente o Postman).
+1.  **Node.js** instalado.
+2.  **PostgreSQL** instalado y corriendo.
+3.  Crear una base de datos vacía en Postgres (ej. `chat_db`).
 
-## 🚀 Cómo Iniciar
+## 🛠 Configuración Inicial
 
-### 1. Instalar dependencias
-Asegúrate de ejecutar esto la primera vez:
+1.  **Instalar dependencias**:
+    ```bash
+    npm install
+    ```
+
+2.  **Configurar Variables de Entorno**:
+    *   Renombra o edita el archivo `.env`.
+    *   Asegúrate de poner tus credenciales de Postgres correctamente:
+    ```env
+    DATABASE_URL="postgresql://usuario:password@localhost:5432/nombre_bd"
+    ```
+
+3.  **Iniciar Base de Datos (Migraciones)**:
+    Esto creará las tablas (User, Message, etc.) en tu base de datos automáticamente.
+    ```bash
+    npx prisma migrate dev --name init
+    ```
+
+## ▶️ Ejecutar el Servidor
+
+Para desarrollo (se reinicia al guardar cambios):
 ```bash
-npm install
+npm run dev
 ```
 
-### 2. Levantar el Servidor
-En una terminal:
-```bash
-npm start
-```
-_El servidor iniciará en `http://localhost:3000`._
+El servidor iniciará en: `http://localhost:3000`
 
-### 3. Iniciar el Listener (Escucha)
-En **otra** terminal:
-```bash
-npm run listen
-```
-_Este cliente se unirá automáticamente a la sala `room-1`._
+## 📚 Documentación de API (Swagger)
+
+Una vez corriendo el servidor, visita esta URL para ver **todas las rutas y probarlas visualmente**:
+
+👉 **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
 
 ---
 
-## 🧪 Cómo Probar (Enviar Mensajes)
+## 🗺 Guía Rápida de Rutas
 
-Tienes dos opciones para enviar mensajes y verlos aparecer en el `listener`:
+El código está organizado modularmente en `src/routes`:
 
-### Opción A: Script de Prueba
-Abre una **tercera** terminal y ejecuta:
-```bash
-node test_sender.js
-```
-Esto conectará un cliente temporal, enviará un mensaje y se desconectará.
+### 🔐 Autenticación (`/api/auth`)
+*   `POST /register` -> Crear nuevo usuario.
+*   `POST /login` -> Iniciar sesión (recibes un `token`).
 
-### Opción B: Postman
-1. Crea una request de tipo **Socket.IO** en Postman.
-2. Conecta a `http://localhost:3000`.
-3. Evento: `message:send`
-4. Payload (Tipo JSON):
-   ```json
-   {
-     "conversationId": "room-1",
-     "text": "¡Hola desde Postman!"
-   }
-   ```
-5. Click en Send.
+### 👤 Usuarios (`/api/users`)
+*   `POST /fcm-token` -> Guardar token para notificaciones push (Firebase).
+
+### 💬 Chat (`/api/chat`)
+*   `GET /history/:roomId` -> Ver mensajes anteriores.
+*   `POST /direct` -> Iniciar chat privado con alguien.
+
+### ⚡️ Socket.IO (Tiempo Real)
+*   **Conexión**: Requiere enviar el `token` de autenticación.
+*   Eventos: `join_room`, `send_message`, `new_message`.
 
 ---
 
-## 🛠 Tecnologías
-- Node.js
-- Express
-- Socket.IO (Server & Client)
+## 📁 Estructura del Proyecto
+
+*   `src/app.js`: Configuración principal de Express.
+*   `src/server.js`: Punto de entrada (levanta el servidor).
+*   `src/routes/`: Definición de las URLs.
+*   `src/controllers/`: Funciones que reciben la petición y responden.
+*   `src/services/`: Lógica "pesada" (guardar en BD, hash passwords, etc).
+*   `src/middlewares/`: Protecciones (validar Token JWT, logs).
